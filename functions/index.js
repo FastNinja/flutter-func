@@ -50,7 +50,7 @@ exports.sendPushNotification = functions.database
       console.log('We have a new notification for user: ', userId);
 
       // Get the list of device notification tokens.
-      const getDeviceTokensPromise = admin.database().ref(`/users/${userId}/tokens`).once('value');
+      const getDeviceTokensPromise = admin.database().ref(`/users/${userId}/notificationTokens`).once('value');
 
       // Get the user profile.
       const getMessagePromise = message.text;
