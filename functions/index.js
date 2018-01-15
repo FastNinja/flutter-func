@@ -46,67 +46,63 @@ exports.sendPushNotification = functions.database
     .ref("/jobMessages/{jobId}/{messageId}")
     .onWrite(event => {
 
-
-    admin.database().ref("/users").once('value', function(snapshot) {
-        snapshot.forEach(function(childSnapshot) {
-
+admin.database().ref("/users").once('value', function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
             const message = event.data.val();
-            console.log("user is: *** : ", childSnapshot.key);
-
-            const userId = childSnapshot.key;
+            var userId = childSnapshot.key;
             console.log('We have a new notification for user: ', userId);
-
-
-              const getDeviceTokensPromise = admin.database().ref(`/users/${userId}/notificationTokens`).once('value');
-
-              // Get the user profile.
-              const getMessagePromise = message.text;
-
-              return Promise.all([getDeviceTokensPromise, getMessagePromise]).then(results => {
-                const tokensSnapshot = results[0];
-                const txt = results[1];
-
-                // Check if there are any device tokens.
-                if (!tokensSnapshot.hasChildren()) {
-                    return console.log('There are no notification tokens to send to.');
-                }
-
-              console.log('There are', tokensSnapshot.numChildren(), 'tokens to send notifications to.');
-              console.log('Fetched text ', txt);
-
-              // Notification details.
-              const payload = {
-                  notification: {
-                      title: 'Notification:',
-                      body: txt
-                  }
-              };
-
-              // Listing all tokens.
-              const tokens = Object.keys(tokensSnapshot.val());
-
-              // Send notifications to all tokens.
-              return admin.messaging().sendToDevice(tokens, payload).then(response => {
-                // For each message check if there was an error.
-                const tokensToRemove = [];
-                response.results.forEach((result, index) => {
-                  const error = result.error;
-                  if (error) {
-                    console.error('Failure sending notification to', tokens[index], error);
-                    // Cleanup the tokens who are not registered anymore.
-                    if (error.code === 'messaging/invalid-registration-token' ||
-                        error.code === 'messaging/registration-token-not-registered') {
-                        tokensToRemove.push(tokensSnapshot.ref.child(tokens[index]).remove());
-                    }
-                  }
-                });
-
-                return Promise.all(tokensToRemove);
-                });
-            });
+            sendTokenToUserId(userId, message.text)
         });
     });
+
   });
+
+
+function sendTokenToUserId(userId, getMessagePromise) {
+
+        const getDeviceTokensPromise = admin.database().ref(`/users/${userId}/notificationTokens`).once('value');
+
+        return Promise.all([getDeviceTokensPromise, getMessagePromise]).then(results => {
+            const tokensSnapshot = results[0];
+        const txt = results[1];
+        // Check if there are any device tokens.
+        if (!tokensSnapshot.hasChildren()) {
+            return console.log('There are no notification tokens to send to.');
+        }
+
+        console.log('There are', tokensSnapshot.numChildren(), 'tokens to send notifications to for userId.', userId);
+
+        // Notification details.
+        const payload = {
+            notification: {
+                title: 'Notification:',
+                body: txt
+            }
+        };
+
+        // Listing all tokens.
+        const tokens = Object.keys(tokensSnapshot.val());
+
+        // Send notifications to all tokens.
+        return admin.messaging().sendToDevice(tokens, payload).then(response => {
+            // For each message check if there was an error.
+            const tokensToRemove = [];
+        response.results.forEach((result, index) => {
+            const error = result.error;
+        if (error) {
+            console.error('Failure sending notification to', tokens[index], error);
+            // Cleanup the tokens who are not registered anymore.
+            if (error.code === 'messaging/invalid-registration-token' ||
+                error.code === 'messaging/registration-token-not-registered') {
+                tokensToRemove.push(tokensSnapshot.ref.child(tokens[index]).remove());
+            }
+        }
+    });
+
+        return Promise.all(tokensToRemove);
+    });
+    });
+}
 
 function toEpochDateTime(utcDateTime) {
   // Algolia required Date time stamp to be in Epoch.
