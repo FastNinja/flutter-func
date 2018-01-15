@@ -97,6 +97,10 @@ function sendTokenToUserId(userId, getMessagePromise) {
                 tokensToRemove.push(tokensSnapshot.ref.child(tokens[index]).remove());
             }
         }
+        else {
+            console.log('Success sending notification to', tokens[index]);
+
+        }
     });
 
         return Promise.all(tokensToRemove);
