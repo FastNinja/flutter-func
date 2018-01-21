@@ -34,7 +34,7 @@ exports.storageOnChanged = functions.storage.object().onChange(event => {
 
   // Create file metadata to update - we need to set CacheControl so mobile will preserve these images
   var newMetadata = {
-    cacheControl: "public,max-age=30000"
+    cacheControl: "public, max-age=31536000"
   };
 
   return gcBucket
