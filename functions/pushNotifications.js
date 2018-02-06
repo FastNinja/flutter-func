@@ -18,13 +18,14 @@ exports.onNewMessageCreated = functions.database
         snapshot.forEach(function(childSnapshot) {
           const message = event.data.val();
           var userId = childSnapshot.key;
+          var email = message.createdBy;
           console.log("We have a new notification for user: ", userId);
-          sendTokenToUserId(userId, message.text);
+          sendTokenToUserId(userId, message.text, email);
         });
       });
   });
 
-function sendTokenToUserId(userId, getMessagePromise) {
+function sendTokenToUserId(userId, getMessagePromise, email) {
   const getDeviceTokensPromise = admin
     .database()
     .ref(`/users/${userId}/notificationTokens`)
@@ -49,7 +50,7 @@ function sendTokenToUserId(userId, getMessagePromise) {
       // Notification details.
       const payload = {
         notification: {
-          title: "Notification:",
+          title: email,
           body: txt
         }
       };
