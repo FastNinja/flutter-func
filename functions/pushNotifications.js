@@ -13,7 +13,7 @@ exports.onNewMessageCreated = functions.database
   .onWrite(event => {
     admin
       .database()
-      .ref("/users")
+      .ref(`/jobs/${event.params.jobId}/userRoles`)
       .once("value", function(snapshot) {
         snapshot.forEach(function(childSnapshot) {
           const message = event.data.val();
